@@ -23,6 +23,7 @@ export interface Fixture {
   venue: string;
   difficulty: number;
   date: string;
+  kickoffTime?: string;
   predictedScore: string;
   predictionComment: string;
 }
@@ -48,4 +49,13 @@ export interface MbahNews {
     action: 'Beli Segera' | 'Lepas / Jual' | 'Waspada / Pantau' | 'Wajib Kapten';
     advice: string;
   };
+}
+
+export interface GuestbookEntry {
+  id: string;
+  name: string;
+  type: 'cacian' | 'makian' | 'nasehat';
+  message: string;
+  timestamp: string;
+  likes: number;
 }

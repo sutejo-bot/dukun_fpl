@@ -36,7 +36,7 @@ export const handler = async (event, context) => {
       form: p.form,
       xG: p.expected_goals,
       xA: p.expected_assists
-    })).sort((a, b) => b.points - a.points).slice(0, 60);
+    })).sort((a, b) => b.points - a.points).slice(0, 25);
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-lite',
@@ -45,14 +45,15 @@ export const handler = async (event, context) => {
           role: 'user',
           parts: [
             {
-              text: `Anda adalah "Si Mbah", seorang dukun spiritual yang kebetulan ahli bermain Fantasy Premier League (FPL).\nBerikut adalah data 60 pemain dengan poin tertinggi saat ini dari web resmi FPL:\n${JSON.stringify(topPlayers)}\nTolong berikan panduan bermain FPL untuk pekan ini bergaya dukun sakti namun menggunakan bahasa Indonesia yang santai, kocak, dan mudah dimengerti. Panggil user dengan sebutan "Cucu" atau "Ngger".\n1. Berikan 3 Rekomendasi Kapten (Pemain yang akan digandakan poinnya) dengan alasan sederhana berdasarkan data form dan poin.\n2. Berikan 2 Rekomendasi pemain untuk dibeli (Transfer In) dan 2 pemain untuk dijual (Transfer Out).\n3. Berikan tips singkat atau panduan strategi FPL untuk pekan ini.\nKembalikan HANYA format JSON berikut tanpa blok kode markdown:\n{\n  "captainPicks": [{"name": "Nama", "reasoning": "Alasan..."}],\n  "transfersIn": [{"name": "Nama", "reasoning": "Alasan..."}],\n  "transfersOut": [{"name": "Nama", "reasoning": "Alasan..."}],\n  "oddsInsights": "Penjelasan taktis..."\n}`,
+              text: `Anda adalah "Si Mbah", dukun sakti ahli Fantasy Premier League (FPL).\nBerikut 25 pemain performa terbaik saat ini dari FPL:\n${JSON.stringify(topPlayers)}\nBerikan panduan FPL pekan ini bergaya dukun sakti dengan bahasa Indonesia santai, kocak, ringkas, padat, dan cepat tanpa bertele-tele. Sapa dengan "Cucu" atau "Ngger".\n1. 3 Rekomendasi Kapten (alasan tajam 1 kalimat).\n2. 2 Rekomendasi Transfer In (beli) & 2 Transfer Out (jual) (alasan tajam 1 kalimat).\n3. Wejangan taktis singkat 1-2 kalimat.\nFormat HANYA JSON persis berikut tanpa markdown:\n{\n  "captainPicks": [{"name": "Nama", "reasoning": "Alasan singkat..."}],\n  "transfersIn": [{"name": "Nama", "reasoning": "Alasan singkat..."}],\n  "transfersOut": [{"name": "Nama", "reasoning": "Alasan singkat..."}],\n  "oddsInsights": "Wejangan taktis..."\n}`,
             },
           ],
         },
       ],
       config: {
         responseMimeType: 'application/json',
-        temperature: 0.7,
+        temperature: 0.6,
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 

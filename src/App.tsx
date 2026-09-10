@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -30,24 +30,109 @@ import {
   Quote, 
   Zap,
   Skull,
+  Volleyball,
   RefreshCw,
   HeartCrack,
   CheckCircle2,
   Filter,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Player, Fixture, AITacticsResponse, MbahNews } from './types';
 import { mbahNewsData } from './data/news';
+import BukuPasien from './components/BukuPasien';
+
+// Helper deteksi dan format waktu sesuai lokasi/zona waktu tamu yang mengakses aplikasi
+function getUserTimeZoneLabel(): string {
+  try {
+    const tzPart = new Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' })
+      .formatToParts(new Date())
+      .find(p => p.type === 'timeZoneName')?.value;
+    return tzPart ? `Waktu Lokal (${tzPart})` : 'Waktu Lokal';
+  } catch {
+    return 'Waktu Lokal';
+  }
+}
+
+function formatFixtureLocalTime(rawDate?: string): string {
+  if (!rawDate) return '';
+  try {
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return rawDate;
+    const formatted = new Intl.DateTimeFormat('id-ID', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(d).replace('.', ':');
+    
+    const tzName = new Intl.DateTimeFormat('id-ID', {
+      timeZoneName: 'short'
+    }).formatToParts(d).find(p => p.type === 'timeZoneName')?.value;
+
+    return `${formatted} ${tzName || ''}`.trim();
+  } catch {
+    return rawDate;
+  }
+}
+
+function getLocalClockString(): string {
+  try {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':');
+    const tzName = new Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' }).formatToParts(now).find(p => p.type === 'timeZoneName')?.value;
+    return `${timeStr} ${tzName || ''}`.trim();
+  } catch {
+    return new Date().toLocaleTimeString();
+  }
+}
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'tactics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'tactics' | 'guestbook'>('dashboard');
   const [players, setPlayers] = useState<Player[]>([]);
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [globalError, setGlobalError] = useState<string | null>(null);
+
+  const hasRecordedRef = useRef(false);
+
+  // Hitungan tamu yang sudah berkunjung (Data Real)
+  const [visitorCount, setVisitorCount] = useState<number>(() => {
+    const local = localStorage.getItem('dukun_fpl_visitor_count');
+    return local ? parseInt(local, 10) : 0;
+  });
+
+  // Hitung setiap aplikasi ini dibuka (Real counter, guard against React StrictMode double count)
+  useEffect(() => {
+    if (hasRecordedRef.current) return;
+    hasRecordedRef.current = true;
+
+    const recordVisit = async () => {
+      try {
+        const res = await fetch('/api/visit', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.count === 'number') {
+            setVisitorCount(data.count);
+            localStorage.setItem('dukun_fpl_visitor_count', data.count.toString());
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback ke counter lokal:', err);
+      }
+      const stored = localStorage.getItem('dukun_fpl_visitor_count');
+      const next = (stored ? parseInt(stored, 10) : 1) + 1;
+      setVisitorCount(next);
+      localStorage.setItem('dukun_fpl_visitor_count', next.toString());
+    };
+
+    recordVisit();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,14 +155,14 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 pb-12">
+      {/* Header: Tamu yang sudah berkunjung dan Made by Maspras HANYA ada di atas dan selalu tampil di semua halaman */}
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+          {/* Logo Brand */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <div className="w-9 h-9 rounded-xl border border-emerald-500/40 bg-slate-900 flex items-center justify-center shrink-0 relative group shadow-sm shadow-emerald-500/20">
-              <Skull className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <Flame className="w-3.5 h-3.5 text-amber-400 absolute -top-1.5 -right-1 animate-pulse" />
+              <Volleyball className="w-5 h-5 text-emerald-400 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-300" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-xl font-bold tracking-tight flex items-center gap-1.5">
@@ -88,28 +173,57 @@ export default function App() {
               </h1>
             </div>
           </div>
+
+          {/* Visitor Counter & Made By Maspras (HANYA di atas & tampil di semua tab/halaman) */}
+          <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-400 shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Tamu:</span>
+              <span className="font-mono font-bold text-emerald-400">{visitorCount.toLocaleString('id-ID')}</span>
+            </div>
+            <span className="text-slate-700">•</span>
+            <div className="flex items-center gap-1">
+              <span>Diracik Oleh</span>
+              <span className="text-emerald-300 font-semibold tracking-wide">maspras</span>
+            </div>
+          </div>
           
+          {/* Navigation Tabs */}
           <nav className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-slate-800 overflow-x-auto">
             {[
-              { id: 'dashboard', label: 'Ringkasan', icon: Activity },
-              { id: 'stats', label: 'Data Pemain', icon: Users },
-              { id: 'tactics', label: 'Wangsit Si Mbah', icon: Sparkles },
+              { id: 'dashboard', label: 'Ruang Tamu', shortLabel: 'Tamu', icon: Activity },
+              { id: 'stats', label: 'Data Pemain', shortLabel: 'Data', icon: Users },
+              { id: 'tactics', label: 'Wangsit Si Mbah', shortLabel: 'Wangsit', icon: Sparkles },
+              { id: 'guestbook', label: 'Buku Pasien', shortLabel: 'Buku', icon: BookOpen },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer",
+                  "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer",
                   activeTab === tab.id 
                     ? "bg-slate-800 text-emerald-400 shadow-sm" 
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                 )}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
+                <span className="inline sm:hidden">{tab.shortLabel}</span>
               </button>
             ))}
           </nav>
+        </div>
+
+        {/* Mobile strip: Tamu yang berkunjung & Made by maspras di bagian atas */}
+        <div className="sm:hidden flex items-center justify-between px-4 py-1.5 bg-slate-900/90 border-t border-slate-800/70 text-[11px] text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-3 h-3 text-emerald-400" />
+            <span>Tamu:</span>
+            <span className="font-mono font-bold text-emerald-400">{visitorCount.toLocaleString('id-ID')}</span>
+          </div>
+          <div>
+            Diracik Oleh <span className="text-emerald-300 font-semibold">maspras</span>
+          </div>
         </div>
       </header>
 
@@ -123,7 +237,7 @@ export default function App() {
               Jika ini di Netlify, pastikan fungsi (Netlify Functions) sudah ter-deploy dan <strong>GEMINI_API_KEY</strong> sudah dimasukkan ke Environment Variables di dashboard Netlify.
             </p>
           </div>
-        ) : loading ? (
+        ) : loading && activeTab !== 'guestbook' ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-slate-400">Mengambil data dari web resmi FPL...</p>
@@ -133,6 +247,7 @@ export default function App() {
             {activeTab === 'dashboard' && <Dashboard players={players} fixtures={fixtures} />}
             {activeTab === 'stats' && <Statistik players={players} />}
             {activeTab === 'tactics' && <AITactics />}
+            {activeTab === 'guestbook' && <BukuPasien formatLocalTime={formatFixtureLocalTime} />}
           </>
         )}
       </main>
@@ -149,9 +264,9 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
       <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-emerald-100 flex gap-4">
         <Activity className="w-6 h-6 text-emerald-400 shrink-0" />
         <div>
-          <h3 className="font-bold text-emerald-400">Selamat datang di Dukun FPL!</h3>
+          <h3 className="font-bold text-emerald-400">Siapa yang menyarankan datang ke Dukun FPL ???</h3>
           <p className="text-sm mt-1 text-emerald-200/80">
-            Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk wangsit silahkan menuju kamar wangsit si mbah.
+            Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk wangsit silahkan menuju kamar wangsit si mbah. Segala bentuk wangsit menjadi tanggungan sendiri.
           </p>
         </div>
       </div>
@@ -160,7 +275,7 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <BarChart className="w-5 h-5 text-emerald-400" />
-            Pemain Sedang Panas (Berdasarkan Form)
+            Yang Masuk Radar Mbah (Wangsit dari Orang Dalam)
           </h2>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -182,11 +297,13 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-emerald-400" />
-              Jadwal Pertandingan Terdekat
+              Pertempuran Minggu Ini
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">WITA (UTC+8)</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              {getUserTimeZoneLabel()}
+            </span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800/80">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-y-auto max-h-[300px] divide-y divide-slate-800/80 pr-1 scrollbar-thin">
             {fixtures.length > 0 ? fixtures.map((fixture) => (
               <div 
                 key={fixture.id} 
@@ -203,7 +320,7 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
                     <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
                       <span className="flex items-center gap-1 text-emerald-400 font-medium">
                         <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        {fixture.date}
+                        {formatFixtureLocalTime(fixture.kickoffTime || fixture.date)}
                       </span>
                       {fixture.venue && (
                         <span className="flex items-center gap-1 text-slate-400">
@@ -270,7 +387,7 @@ function WartaSiMbah() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeModalNews, setActiveModalNews] = useState<MbahNews | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshedTime, setLastRefreshedTime] = useState<string>('Baru saja (WITA)');
+  const [lastRefreshedTime, setLastRefreshedTime] = useState<string>(() => `Baru saja (${getLocalClockString()})`);
 
   // Auto fetch latest dynamic news on mount
   useEffect(() => {
@@ -281,7 +398,7 @@ function WartaSiMbah() {
           const data = await res.json();
           if (data.news && Array.isArray(data.news) && data.news.length > 0) {
             setNewsList(data.news);
-            setLastRefreshedTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Makassar' }) + ' WITA');
+            setLastRefreshedTime(getLocalClockString());
           }
         }
       } catch (err) {
@@ -299,7 +416,7 @@ function WartaSiMbah() {
         const data = await res.json();
         if (data.news && Array.isArray(data.news) && data.news.length > 0) {
           setNewsList(data.news);
-          setLastRefreshedTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Makassar' }) + ' WITA');
+          setLastRefreshedTime(getLocalClockString());
         }
       }
     } catch (err) {

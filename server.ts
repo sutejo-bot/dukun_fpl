@@ -1,9 +1,59 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const VISITOR_FILE = path.join(process.cwd(), 'visitor-count.json');
+const GUESTBOOK_FILE = path.join(process.cwd(), 'guestbook.json');
+
+function getVisitorCount(): number {
+  try {
+    if (fs.existsSync(VISITOR_FILE)) {
+      const data = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
+      if (typeof data.count === 'number') return data.count;
+    }
+  } catch (e) {
+    console.error('Gagal membaca hitungan pengunjung:', e);
+  }
+  return 0;
+}
+
+function incrementVisitorCount(): number {
+  try {
+    const current = getVisitorCount();
+    const next = current + 1;
+    fs.writeFileSync(VISITOR_FILE, JSON.stringify({ count: next, lastVisited: new Date().toISOString() }, null, 2));
+    return next;
+  } catch (e) {
+    console.error('Gagal menyimpan hitungan pengunjung:', e);
+    return 0;
+  }
+}
+
+function getGuestbookEntries(): any[] {
+  try {
+    if (fs.existsSync(GUESTBOOK_FILE)) {
+      const data = JSON.parse(fs.readFileSync(GUESTBOOK_FILE, 'utf-8'));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) {
+    console.error('Gagal membaca buku pasien:', e);
+  }
+  return [];
+}
+
+function saveGuestbookEntries(entries: any[]): boolean {
+  try {
+    fs.writeFileSync(GUESTBOOK_FILE, JSON.stringify(entries, null, 2));
+    return true;
+  } catch (e) {
+    console.error('Gagal menyimpan buku pasien:', e);
+    return false;
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -14,6 +64,69 @@ async function startServer() {
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
+  });
+
+  // Visitor Counter Endpoint
+  app.get('/api/visit', (req, res) => {
+    const count = getVisitorCount();
+    res.json({ count });
+  });
+
+  app.post('/api/visit', (req, res) => {
+    const count = incrementVisitorCount();
+    res.json({ count });
+  });
+
+  // Guestbook (Buku Pasien) Endpoints
+  app.get('/api/guestbook', (req, res) => {
+    const entries = getGuestbookEntries();
+    res.json({ entries });
+  });
+
+  app.post('/api/guestbook', (req, res) => {
+    try {
+      const { name, type, message } = req.body;
+      const cleanName = typeof name === 'string' ? name.trim().slice(0, 60) : '';
+      const cleanMsg = typeof message === 'string' ? message.trim().slice(0, 500) : '';
+      const cleanType = ['cacian', 'makian', 'nasehat'].includes(type) ? type : 'cacian';
+
+      if (!cleanName || !cleanMsg) {
+        return res.status(400).json({ error: 'Nama dan isi curahan hati/nasehat wajib diisi.' });
+      }
+
+      const entries = getGuestbookEntries();
+      const newEntry = {
+        id: `gb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: cleanName,
+        type: cleanType,
+        message: cleanMsg,
+        timestamp: new Date().toISOString(),
+        likes: 0
+      };
+
+      const updated = [newEntry, ...entries].slice(0, 150);
+      saveGuestbookEntries(updated);
+      res.json({ success: true, entry: newEntry, entries: updated });
+    } catch (e) {
+      console.error('Gagal menambah pasien:', e);
+      res.status(500).json({ error: 'Terjadi kesalahan sistem' });
+    }
+  });
+
+  app.post('/api/guestbook/like', (req, res) => {
+    try {
+      const { id } = req.body;
+      const entries = getGuestbookEntries();
+      const entry = entries.find((e: any) => e.id === id);
+      if (entry) {
+        entry.likes = (entry.likes || 0) + 1;
+        saveGuestbookEntries(entries);
+        return res.json({ success: true, likes: entry.likes, entries });
+      }
+      res.status(404).json({ error: 'Catatan pasien tidak ditemukan' });
+    } catch (e) {
+      res.status(500).json({ error: 'Gagal merespon catatan' });
+    }
   });
 
   // Fetch real data from official FPL API
@@ -234,7 +347,8 @@ async function startServer() {
           awayTeam: awayName,
           venue: venue,
           difficulty: f.team_h_difficulty,
-          date: formatWita(f.kickoff_time),
+          kickoffTime: f.kickoff_time,
+          date: f.kickoff_time || formatWita(f.kickoff_time),
           predictedScore: score,
           predictionComment: comment
         };
@@ -280,10 +394,10 @@ async function startServer() {
 
       const now = new Date();
       const formatTimeAgo = (minutesAgo: number) => {
-        if (minutesAgo < 10) return 'Baru saja (WITA)';
-        if (minutesAgo < 60) return `${minutesAgo} menit lalu (WITA)`;
+        if (minutesAgo < 10) return 'Baru saja';
+        if (minutesAgo < 60) return `${minutesAgo} menit lalu`;
         const hours = Math.floor(minutesAgo / 60);
-        return `${hours} jam lalu (WITA)`;
+        return `${hours} jam lalu`;
       };
 
       const liveNews = [
@@ -406,7 +520,7 @@ async function startServer() {
         form: p.form,
         xG: p.expected_goals,
         xA: p.expected_assists
-      })).sort((a: any, b: any) => b.points - a.points).slice(0, 60);
+      })).sort((a: any, b: any) => b.points - a.points).slice(0, 25);
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite',
@@ -415,21 +529,21 @@ async function startServer() {
             role: 'user',
             parts: [
               {
-                text: `Anda adalah "Si Mbah", seorang dukun spiritual yang kebetulan ahli bermain Fantasy Premier League (FPL).
-Berikut adalah data 60 pemain dengan poin tertinggi saat ini dari web resmi FPL:
+                text: `Anda adalah "Si Mbah", dukun sakti ahli Fantasy Premier League (FPL).
+Berikut 25 pemain performa terbaik saat ini dari FPL:
 ${JSON.stringify(topPlayers)}
 
-Tolong berikan panduan bermain FPL untuk pekan ini bergaya dukun sakti namun menggunakan bahasa Indonesia yang santai, kocak, dan mudah dimengerti. Panggil user dengan sebutan "Cucu" atau "Ngger".
-1. Berikan 3 Rekomendasi Kapten (Pemain yang akan digandakan poinnya) dengan alasan sederhana berdasarkan data form dan poin.
-2. Berikan 2 Rekomendasi pemain untuk dibeli (Transfer In) dan 2 pemain untuk dijual (Transfer Out).
-3. Berikan tips singkat atau panduan strategi FPL untuk pekan ini.
+Berikan panduan FPL pekan ini bergaya dukun sakti dengan bahasa Indonesia santai, kocak, ringkas, padat, dan cepat tanpa bertele-tele. Sapa dengan "Cucu" atau "Ngger".
+1. 3 Rekomendasi Kapten (alasan tajam 1 kalimat).
+2. 2 Rekomendasi Transfer In (beli) & 2 Transfer Out (jual) (alasan tajam 1 kalimat).
+3. Wejangan taktis singkat 1-2 kalimat.
 
-Kembalikan HANYA format JSON berikut tanpa blok kode markdown:
+Format HANYA JSON persis berikut tanpa markdown:
 {
-  "captainPicks": [{"name": "Nama", "reasoning": "Alasan..."}],
-  "transfersIn": [{"name": "Nama", "reasoning": "Alasan..."}],
-  "transfersOut": [{"name": "Nama", "reasoning": "Alasan..."}],
-  "oddsInsights": "Penjelasan taktis..."
+  "captainPicks": [{"name": "Nama", "reasoning": "Alasan singkat..."}],
+  "transfersIn": [{"name": "Nama", "reasoning": "Alasan singkat..."}],
+  "transfersOut": [{"name": "Nama", "reasoning": "Alasan singkat..."}],
+  "oddsInsights": "Wejangan taktis..."
 }`,
               },
             ],
@@ -437,7 +551,8 @@ Kembalikan HANYA format JSON berikut tanpa blok kode markdown:
         ],
         config: {
           responseMimeType: 'application/json',
-          temperature: 0.7,
+          temperature: 0.6,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       });
 
