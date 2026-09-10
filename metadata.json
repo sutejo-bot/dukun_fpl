@@ -1,6 +1,6 @@
 {
   "name": "Dukun FPL",
-  "description": "Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk saran strategi silahkan ke saran si mba.",
+  "description": "Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk wangsit silahkan menuju kamar wangsit si mbah.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

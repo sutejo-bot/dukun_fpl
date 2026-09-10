@@ -10,6 +10,10 @@ export interface Player {
   xA: number;
   ictIndex: number;
   selectedByPercent: string;
+  status: string;
+  news: string;
+  chanceOfPlaying: number | null;
+  isInjured: boolean;
 }
 
 export interface Fixture {
@@ -28,4 +32,20 @@ export interface AITacticsResponse {
   transfersIn: { name: string; reasoning: string }[];
   transfersOut: { name: string; reasoning: string }[];
   oddsInsights: string;
+}
+
+export interface MbahNews {
+  id: string;
+  title: string;
+  source: string;
+  sourceType: 'official' | 'transfer' | 'injury' | 'dressing_room';
+  category: string;
+  timeAgo: string;
+  officialSummary: string;
+  mbahCommentary: string;
+  fplImpact: {
+    affectedPlayers: string[];
+    action: 'Beli Segera' | 'Lepas / Jual' | 'Waspada / Pantau' | 'Wajib Kapten';
+    advice: string;
+  };
 }

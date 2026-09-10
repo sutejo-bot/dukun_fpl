@@ -107,15 +107,19 @@ export const handler = async (event, context) => {
     const players = data.elements.map((p) => ({
       id: p.id,
       name: p.web_name,
-      team: teamsMap[p.team],
+      team: teamsFullNameMap[p.team] || teamsMap[p.team],
       position: posMap[p.element_type],
       price: p.now_cost / 10,
-      form: parseFloat(p.form),
+      form: parseFloat(p.form) || 0,
       points: p.total_points,
       xG: parseFloat(p.expected_goals || 0),
       xA: parseFloat(p.expected_assists || 0),
       ictIndex: parseFloat(p.ict_index || 0),
-      selectedByPercent: p.selected_by_percent
+      selectedByPercent: p.selected_by_percent,
+      status: p.status,
+      news: p.news || '',
+      chanceOfPlaying: p.chance_of_playing_next_round ?? p.chance_of_playing_this_round,
+      isInjured: p.status !== 'a' || Boolean(p.news && p.news.trim().length > 0)
     })).sort((a, b) => b.points - a.points);
 
     const fixResponse = await fetch('https://fantasy.premierleague.com/api/fixtures/?future=1', {
