@@ -18,15 +18,21 @@ export default function App() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch('/api/fpl-data');
+        if (!res.ok) {
+           throw new Error('Gagal terhubung ke server backend (Error ' + res.status + ')');
+        }
         const data = await res.json();
         setPlayers(data.players || []);
         setFixtures(data.fixtures || []);
       } catch (error) {
         console.error("Gagal memuat data FPL", error);
+        setGlobalError('Gagal terhubung ke server backend FPL. Jika Anda meng-hosting aplikasi ini di Netlify (statis) atau GitHub Pages, API tidak akan berfungsi karena aplikasi ini membutuhkan backend Node.js (server.ts) yang aktif berjalan.');
       } finally {
         setLoading(false);
       }
@@ -71,7 +77,21 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {loading ? (
+        {globalError ? (
+          <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center max-w-2xl mx-auto mt-10 animate-in fade-in zoom-in-95 duration-500">
+            <X className="w-16 h-16 text-rose-500 mb-6 bg-rose-500/10 p-3 rounded-full" />
+            <h2 className="text-2xl font-bold text-rose-400 mb-3">Backend Tidak Ditemukan (Error 404)</h2>
+            <p className="text-slate-300 mb-6 leading-relaxed text-lg">{globalError}</p>
+            <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 text-left w-full space-y-4">
+              <p className="text-sm text-slate-400 font-medium border-b border-slate-800 pb-2">SOLUSI DEPLOYMENT:</p>
+              <ul className="text-sm text-slate-300 space-y-3 list-disc pl-5">
+                <li>Aplikasi ini adalah <strong>Full-Stack App</strong> (React Frontend + Express Backend).</li>
+                <li>Netlify (statis) secara default <strong>hanya menjalankan frontend-nya saja</strong>, sehingga request ke <code>/api/...</code> gagal/blank.</li>
+                <li>Gunakan platform hosting full-stack (PaaS) seperti <strong>Render, Railway, Heroku, atau Google Cloud Run</strong> yang bisa menjalankan Node.js server.</li>
+              </ul>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-slate-400">Mengambil data dari web resmi FPL...</p>
