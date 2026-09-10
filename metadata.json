@@ -1,6 +1,6 @@
 {
   "name": "Dukun FPL",
-  "description": "DUNIA INI PENUH DENGAN KETIDAKPASTIAN.\n\nAplikasi analisis statistik FPL, rekomendasi transfer mingguan, dan panduan taktis berbasis probabilitas odds taruhan.\n",
+  "description": "Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk saran strategi silahkan ke saran si mba.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

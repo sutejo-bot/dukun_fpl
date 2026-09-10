@@ -99,7 +99,7 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
         <div>
           <h3 className="font-bold text-emerald-400">Selamat datang di Dukun FPL!</h3>
           <p className="text-sm mt-1 text-emerald-200/80">
-            Aplikasi ini mengambil data langsung dari web resmi Fantasy Premier League. Gunakan menu <strong>Saran Si Mbah</strong> untuk mendapatkan panduan strategi pekan ini.
+            Data yang disajikan tergantung dari kemenyan yang ditawarkan. Untuk saran strategi silahkan ke menu <strong>Saran Si Mbah</strong>.
           </p>
         </div>
       </div>
