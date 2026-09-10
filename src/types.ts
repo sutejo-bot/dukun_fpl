@@ -16,8 +16,11 @@ export interface Fixture {
   id: number;
   homeTeam: string;
   awayTeam: string;
+  venue: string;
   difficulty: number;
   date: string;
+  predictedScore: string;
+  predictionComment: string;
 }
 
 export interface AITacticsResponse {

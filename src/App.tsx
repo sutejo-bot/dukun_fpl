@@ -8,7 +8,7 @@ import {
   Tooltip, 
   ResponsiveContainer
 } from 'recharts';
-import { BrainCircuit, Activity, CalendarDays, TrendingUp, TrendingDown, Star, Users, Info, X, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { BrainCircuit, Activity, CalendarDays, TrendingUp, TrendingDown, Star, Users, Info, X, ChevronUp, ChevronDown, ArrowUpDown, MapPin, Sparkles, Clock } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Player, Fixture, AITacticsResponse } from './types';
 
@@ -142,35 +142,77 @@ function Dashboard({ players, fixtures }: { players: Player[], fixtures: Fixture
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-emerald-400" />
-            Jadwal Pertandingan Terdekat
-          </h2>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            {fixtures.length > 0 ? fixtures.map((fixture, idx) => (
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-emerald-400" />
+              Jadwal Pertandingan Terdekat
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">WITA (UTC+8)</span>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800/80">
+            {fixtures.length > 0 ? fixtures.map((fixture) => (
               <div 
                 key={fixture.id} 
-                className={cn(
-                  "flex items-center justify-between p-4",
-                  idx !== fixtures.length - 1 && "border-b border-slate-800"
-                )}
+                className="p-4 space-y-2.5 hover:bg-slate-800/30 transition-colors"
               >
-                <div className="flex flex-col">
-                  <span className="font-semibold text-slate-200 text-sm">{fixture.homeTeam} vs {fixture.awayTeam}</span>
-                  <span className="text-xs text-slate-500">{fixture.date}</span>
-                </div>
-                <div className="flex gap-1" title={"Tingkat Kesulitan: " + fixture.difficulty}>
-                  {[...Array(5)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={cn(
-                        "w-2 h-6 rounded-sm",
-                        i < fixture.difficulty 
-                          ? fixture.difficulty <= 2 ? "bg-emerald-500" : fixture.difficulty === 3 ? "bg-amber-500" : "bg-rose-500"
-                          : "bg-slate-800"
+                {/* Match Header: Teams & Difficulty */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="font-semibold text-slate-100 text-sm leading-snug">
+                      <span className="text-emerald-300">{fixture.homeTeam}</span>
+                      <span className="mx-1.5 text-xs text-slate-500 font-normal">vs</span>
+                      <span className="text-slate-200">{fixture.awayTeam}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                      <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        {fixture.date}
+                      </span>
+                      {fixture.venue && (
+                        <span className="flex items-center gap-1 text-slate-400">
+                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          {fixture.venue}
+                        </span>
                       )}
-                    />
-                  ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1 shrink-0" title={"Tingkat Kesulitan: " + fixture.difficulty}>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Tingkat Kesulitan</span>
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "w-2 h-4 rounded-xs",
+                            i < fixture.difficulty 
+                              ? fixture.difficulty <= 2 ? "bg-emerald-500" : fixture.difficulty === 3 ? "bg-amber-500" : "bg-rose-500"
+                              : "bg-slate-800"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prediksi Si Mbah & Estimasi Skor Akhir */}
+                <div className="bg-slate-950/80 border border-emerald-500/20 rounded-lg p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Prediksi Si Mbah</span>
+                    </div>
+                    {fixture.predictedScore && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        Skor: {fixture.predictedScore}
+                      </span>
+                    )}
+                  </div>
+                  {fixture.predictionComment && (
+                    <p className="text-xs text-slate-300 italic leading-relaxed">
+                      "{fixture.predictionComment}"
+                    </p>
+                  )}
                 </div>
               </div>
             )) : (
