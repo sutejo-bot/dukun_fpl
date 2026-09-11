@@ -158,24 +158,32 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 pb-12">
       {/* Header: Tamu yang sudah berkunjung dan Made by Maspras HANYA ada di atas dan selalu tampil di semua halaman */}
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Logo Brand */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-xl border border-emerald-500/40 bg-slate-900 flex items-center justify-center shrink-0 relative group shadow-sm shadow-emerald-500/20">
-              <Volleyball className="w-5 h-5 text-emerald-400 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-300" />
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-emerald-500/40 bg-slate-900 flex items-center justify-center shrink-0 relative group shadow-sm shadow-emerald-500/20">
+                <Volleyball className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-1.5">
+                  <span>Dukun FPL</span>
+                  <span className="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+                    Wangsit Sakti
+                  </span>
+                </h1>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight flex items-center gap-1.5">
-                <span>Dukun FPL</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
-                  Wangsit Sakti
-                </span>
-              </h1>
+            {/* Mobile counter strip moved here for better alignment */}
+            <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-[10px] text-slate-400">
+              <Users className="w-3 h-3 text-emerald-400" />
+              <span className="font-mono font-bold text-emerald-400">{visitorCount.toLocaleString('id-ID')}</span>
             </div>
           </div>
 
-          {/* Visitor Counter & Made By Maspras (HANYA di atas & tampil di semua tab/halaman) */}
-          <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-400 shadow-sm">
+          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+            {/* Visitor Counter & Made By Maspras (HANYA di atas & tampil di semua tab/halaman) */}
+            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-400 shadow-sm">
             <div className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-emerald-400" />
               <span>Tamu:</span>
@@ -188,41 +196,30 @@ export default function App() {
             </div>
           </div>
           
-          {/* Navigation Tabs */}
-          <nav className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-slate-800 overflow-x-auto">
-            {[
-              { id: 'dashboard', label: 'Ruang Tamu', shortLabel: 'Tamu', icon: Activity },
-              { id: 'stats', label: 'Data Pemain', shortLabel: 'Data', icon: Users },
-              { id: 'tactics', label: 'Wangsit Si Mbah', shortLabel: 'Wangsit', icon: Sparkles },
-              { id: 'guestbook', label: 'Buku Pasien', shortLabel: 'Buku', icon: BookOpen },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={cn(
-                  "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer",
-                  activeTab === tab.id 
-                    ? "bg-slate-800 text-emerald-400 shadow-sm" 
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                )}
-              >
-                <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="inline sm:hidden">{tab.shortLabel}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Mobile strip: Tamu yang berkunjung & Made by maspras di bagian atas */}
-        <div className="sm:hidden flex items-center justify-between px-4 py-1.5 bg-slate-900/90 border-t border-slate-800/70 text-[11px] text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <Users className="w-3 h-3 text-emerald-400" />
-            <span>Tamu:</span>
-            <span className="font-mono font-bold text-emerald-400">{visitorCount.toLocaleString('id-ID')}</span>
-          </div>
-          <div>
-            Diracik Oleh <span className="text-emerald-300 font-semibold">maspras</span>
+            {/* Navigation Tabs */}
+            <nav className="flex items-center w-full sm:w-auto gap-1 bg-slate-900/50 p-1 rounded-lg border border-slate-800 overflow-x-auto scrollbar-none snap-x snap-mandatory">
+              {[
+                { id: 'dashboard', label: 'Ruang Tamu', shortLabel: 'Tamu', icon: Activity },
+                { id: 'stats', label: 'Data Pemain', shortLabel: 'Data', icon: Users },
+                { id: 'tactics', label: 'Wangsit Si Mbah', shortLabel: 'Wangsit', icon: Sparkles },
+                { id: 'guestbook', label: 'Buku Pasien', shortLabel: 'Buku', icon: BookOpen },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={cn(
+                    "snap-center flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] sm:text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer",
+                    activeTab === tab.id 
+                      ? "bg-slate-800 text-emerald-400 shadow-sm" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                  )}
+                >
+                  <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="inline sm:hidden">{tab.shortLabel}</span>
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
       </header>

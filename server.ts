@@ -529,14 +529,14 @@ async function startServer() {
             role: 'user',
             parts: [
               {
-                text: `Anda adalah "Si Mbah", dukun sakti ahli Fantasy Premier League (FPL).
-Berikut 25 pemain performa terbaik saat ini dari FPL:
+                text: `Anda adalah "Si Mbah", dukun sakti ahli Fantasy Premier League (FPL). Berdasarkan penerawangan ghaib Anda yang bersumber dari kanal berita bola Liga Inggris, bocoran bandar bola (odds), dan data statistik internal FPL.
+Berikut 25 pemain performa terbaik saat ini:
 ${JSON.stringify(topPlayers)}
 
 Berikan panduan FPL pekan ini bergaya dukun sakti dengan bahasa Indonesia santai, kocak, ringkas, padat, dan cepat tanpa bertele-tele. Sapa dengan "Cucu" atau "Ngger".
-1. 3 Rekomendasi Kapten (alasan tajam 1 kalimat).
+1. 3 Rekomendasi Kapten (alasan tajam 1 kalimat, kombinasikan analisis bandar/odds).
 2. 2 Rekomendasi Transfer In (beli) & 2 Transfer Out (jual) (alasan tajam 1 kalimat).
-3. Wejangan taktis singkat 1-2 kalimat.
+3. Wejangan taktis singkat 1-2 kalimat (bisikan dari berita liga inggris).
 
 Format HANYA JSON persis berikut tanpa markdown:
 {
